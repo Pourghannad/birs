@@ -301,7 +301,7 @@ function App() {
                         <linearGradient id="buyFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0d8f80" stopOpacity={0.18} /><stop offset="95%" stopColor="#0d8f80" stopOpacity={0} /></linearGradient>
                         <linearGradient id="sellFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#c77b5a" stopOpacity={0.12} /><stop offset="95%" stopColor="#c77b5a" stopOpacity={0} /></linearGradient>
                       </defs>
-                      <CartesianGrid vertical={false} stroke="#2c4052" strokeDasharray="4 5" />
+                      <CartesianGrid vertical={false} stroke="#30343c" strokeDasharray="4 5" />
                       <XAxis dataKey="timestamp_ms" type="number" domain={['dataMin', 'dataMax']} scale="time" tickFormatter={(value: number) => chartDate.format(new Date(value))} tick={{ fill: '#8fa3b4', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={45} />
                       <YAxis tickFormatter={(value: number) => number(value)} tick={{ fill: '#8fa3b4', fontSize: 11 }} axisLine={false} tickLine={false} width={48} orientation="right" domain={['auto', 'auto']} />
                       <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#9bb6b3', strokeDasharray: '4 4' }} />

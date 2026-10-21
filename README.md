@@ -2,6 +2,28 @@
 
 A single-file PHP API that reads Tehran cash-market prices from the public preview of the [birs_tomorrow](https://t.me/birs_tomorrow) Telegram channel. It uses cURL and does not require a bot token.
 
+## Web dashboard
+
+The `web/` directory contains a single-page Persian dashboard built with React, Vite, HeroUI, and Recharts. It shows buy and sell trends, the minimum and maximum prices with their dates, recent messages, and CSV export. The date filter uses **Gregorian dates in the Asia/Tehran time zone**. The dashboard fetches more history pages automatically and marks the report as partial if the API cannot finish the range.
+
+To run it locally, start the PHP API from the repository root in one terminal:
+
+```sh
+php -S 127.0.0.1:8000 -t .
+```
+
+In another terminal, start Vite:
+
+```sh
+cd web
+npm ci
+npm run dev
+```
+
+Open the URL printed by Vite. Its development proxy forwards `/birs-price.php` requests to the PHP server on port 8000.
+
+To deploy, run `npm run build` in `web/`, then place the contents of `web/dist/` in the same public web root as `birs-price.php`. The dashboard expects the PHP endpoint at `/birs-price.php`. If the endpoint lives elsewhere, set `VITE_API_URL` to its URL before building; a different origin must permit browser requests with CORS. The GitHub repository alone does not host the PHP endpoint.
+
 ## Installation
 
 Upload `birs-price.php` to a host running **PHP 7.4 or newer** with the `curl`, `dom`, and `libxml` extensions enabled. The server must be able to reach `https://t.me`. No database or Composer is required.

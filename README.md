@@ -1,12 +1,12 @@
-# Birs price API
+# Birs Price API
 
-یک فایل PHP برای خواندن قیمت «بیرس نقدی تهران» از پیش‌نمایش عمومی کانال [birs_tomorrow](https://t.me/birs_tomorrow)، با cURL و بدون توکن ربات.
+A single-file PHP API that reads Tehran cash-market prices from the public preview of the [birs_tomorrow](https://t.me/birs_tomorrow) Telegram channel. It uses cURL and does not require a bot token.
 
-## نصب
+## Installation
 
-فقط `birs-price.php` را روی هاست با **PHP 7.4 یا جدیدتر** و افزونه‌های `curl`، `dom` و `libxml` آپلود کنید. سرور باید به `https://t.me` دسترسی داشته باشد. دیتابیس یا Composer لازم نیست.
+Upload `birs-price.php` to a host running **PHP 7.4 or newer** with the `curl`, `dom`, and `libxml` extensions enabled. The server must be able to reach `https://t.me`. No database or Composer is required.
 
-## استفاده
+## Usage
 
 ```text
 /birs-price.php
@@ -14,30 +14,30 @@
 /birs-price.php?mode=history&from=2026-10-01&to=2026-10-21&max_pages=50
 ```
 
-بدون پارامتر، خروجی قبلی حفظ شده است: آخرین پیام دارای هر دو قیمت، با `buy` و `sell` از نوع رشته، لینک و زمان پیام. `mode=latest` نیز همین رفتار را دارد.
+With no parameters, the API preserves its original response: the latest message containing both prices, with `buy` and `sell` as strings, the message link, and its timestamp. `mode=latest` selects the same behavior.
 
-وجود هرکدام از `from`، `to`، `max_pages` یا `before` حالت تاریخچه را فعال می‌کند. برای تاریخچه بدون فیلتر تاریخ از `mode=history` استفاده کنید. ترکیب پارامترهای تاریخچه با `mode=latest` خطای ۴۰۰ می‌دهد.
+Providing any of `from`, `to`, `max_pages`, or `before` enables history mode. To request history without a date filter, use `mode=history`. Combining history parameters with `mode=latest` returns HTTP 400.
 
-| پارامتر | توضیح |
+| Parameter | Description |
 | --- | --- |
-| `from` | شروع بازه، شامل ابتدای روز؛ اختیاری |
-| `to` | پایان بازه، شامل تمام روز؛ اختیاری |
-| `mode` | `latest` یا `history` |
-| `max_pages` | حداکثر صفحات در هر درخواست؛ پیش‌فرض ۲۰، بین ۱ تا ۱۰۰ |
-| `before` | نشانگر پیام برای ادامهٔ خواندن صفحات قدیمی‌تر؛ از پاسخ قبلی بگیرید |
+| `from` | Start date, inclusive from the beginning of that day; optional |
+| `to` | End date, inclusive through the end of that day; optional |
+| `mode` | `latest` or `history` |
+| `max_pages` | Maximum number of pages fetched per request; defaults to 20, accepts 1–100 |
+| `before` | Message cursor used to continue with older pages; pass the value from the previous response |
 
-تاریخ‌ها **میلادی، به شکل `YYYY-MM-DD` و بر اساس منطقهٔ زمانی `Asia/Tehran`** هستند؛ تاریخ شمسی پذیرفته نمی‌شود. نبودن `from` یعنی بدون حد پایین و نبودن `to` یعنی بدون حد بالا. تاریخ نامعتبر، بازهٔ معکوس و پارامتر عددی نامعتبر، پاسخ JSON با HTTP 400 می‌دهند.
+Dates must be **Gregorian, in `YYYY-MM-DD` format, and use the `Asia/Tehran` time zone**. Jalali dates are not accepted. Omitting `from` means there is no lower date bound; omitting `to` means there is no upper bound. Invalid dates, reversed ranges, and invalid numeric parameters return a JSON response with HTTP 400.
 
-## خروجی تاریخچه و نمودار
+## History and chart data
 
-- `series`: تمام قیمت‌های منطبق، مرتب از قدیم به جدید؛ یک نقطه برای هر پیام، بدون پیام تکراری.
-- هر نقطه: `message_id`، `message_url`، `time` با اختلاف ساعت تهران، `date`، `timestamp_ms` برای محور زمان، `buy` و `sell` از نوع عددی، و `spread` برابر فروش منهای خرید.
-- `stats.buy.min`، `stats.buy.max`، `stats.sell.min` و `stats.sell.max`: مقدار، تاریخ، زمان، `timestamp_ms` و لینک پیام کمینه/بیشینه. در تساوی، اولین رخداد زمانی انتخاب می‌شود.
-- `daily`: خلاصهٔ روزانهٔ خرید و فروش با `open`، `high`، `low`، `close` و تعداد نمونه‌های روز در `count`؛ مناسب نمودار شمعی.
-- `count`: تعداد نقاط این پاسخ. در بازهٔ خالی، آرایه‌ها خالی و کمینه/بیشینه `null` هستند.
-- `complete`، `pagination` و `warnings`: وضعیت پوشش داده و ادامهٔ دریافت.
+- `series`: matching prices in chronological order, with one point per message and no duplicate messages.
+- Each point includes `message_id`, `message_url`, `time` with the Tehran time-zone offset, `date`, `timestamp_ms` for time axes, numeric `buy` and `sell` prices, and `spread` (sell minus buy).
+- `stats.buy.min`, `stats.buy.max`, `stats.sell.min`, and `stats.sell.max`: each includes the value, date, time, `timestamp_ms`, and message link. When values tie, the earliest occurrence is selected.
+- `daily`: daily buy and sell summaries with `open`, `high`, `low`, `close`, and the number of observations in `count`, suitable for candlestick charts.
+- `count`: number of points in this response. For an empty range, the arrays are empty and the extrema are `null`.
+- `complete`, `pagination`, and `warnings`: report data coverage and whether more pages remain.
 
-مثلاً بخشی از نقطهٔ نمودار چنین است:
+A chart data point looks like this:
 
 ```json
 {
@@ -50,7 +50,7 @@
 }
 ```
 
-آماده‌سازی سری‌های نمودار در JavaScript، بعد از دریافت یک پاسخ کامل:
+Prepare chart series in JavaScript after receiving a complete response:
 
 ```js
 const response = await fetch('birs-price.php?from=2026-10-01&to=2026-10-21');
@@ -64,31 +64,31 @@ const candles = data.daily.map(day => ({ date: day.date, ...day.buy }));
 console.log({ buy, sell, candles, highestBuy: data.stats.buy.max });
 ```
 
-دو قیمت همیشه از **همان پیام** استخراج می‌شوند؛ پیامِ فاقد یکی از قیمت‌ها و بازارهای دیگر وارد سری نمی‌شوند. ارقام فارسی/عربی، کشیده و جداکنندهٔ هزارگان پشتیبانی می‌شوند. واحد و مقیاس قیمت همان عدد منتشرشده در کانال است؛ تبدیل به تومان/ریال، جابه‌جایی خرید و فروش یا تغییر علامت اختلاف انجام نمی‌شود. خلاصهٔ روزانه صرفاً بر اساس پیام‌های مشاهده‌شده است؛ برای روزهای بدون پیام، قیمت ساختگی یا پرکردن فاصله نداریم.
+Both prices must come from **the same message**. Messages missing either price and messages for other markets are excluded. Persian and Arabic numerals, Persian character elongation, and thousands separators are supported. Prices retain the values and units published by the channel: the API does not convert between rial and toman, swap buy and sell, or change the sign of the spread. Daily summaries use only observed messages; missing days are not filled with synthetic prices.
 
-## تاریخچهٔ طولانی و ادامهٔ دریافت
+## Older history and pagination
 
-API از جدیدترین صفحه شروع می‌کند و با نشانگر `before` به عقب می‌رود؛ برای فیلتر تاریخ فقط به صفحهٔ آخر محدود نیست. هر درخواست حداکثر ۲۵ ثانیه کار شبکه و `max_pages` صفحه انجام می‌دهد. تایم‌اوت وب‌سرور نیز باید فرصت این اجرا را بدهد.
+The API starts at the newest page and follows the `before` cursor to read older pages, so date filters are not limited to the latest page. Each request is limited to 25 seconds of network work and `max_pages` pages. Configure the web server timeout to allow the request to finish.
 
-اگر `complete=false` و `pagination.next_before` عدد بود، همان بازه را با آن نشانگر ادامه دهید:
+If `complete=false` and `pagination.next_before` contains a number, continue with that cursor and the same date range:
 
 ```text
 /birs-price.php?from=2026-10-01&to=2026-10-21&before=492&max_pages=20
 ```
 
-`pagination.stop_reason` علت توقف را مشخص می‌کند: `from_reached`، `public_history_exhausted`، `max_pages`، `time_budget`، `upstream_error` یا `pagination_stalled`. خطای دریافت صفحهٔ اول HTTP 502 می‌دهد؛ خطای صفحهٔ بعد دادهٔ جمع‌شده را با `complete=false` و هشدار برمی‌گرداند. قیمت فاقد زمان معتبر حذف و در `warnings` اعلام می‌شود.
+`pagination.stop_reason` describes why the scan stopped: `from_reached`, `public_history_exhausted`, `max_pages`, `time_budget`, `upstream_error`, or `pagination_stalled`. A failure on the first page returns HTTP 502. A failure on a later page returns the data collected so far with `complete=false` and a warning. Price messages without a valid timestamp are excluded and reported in `warnings`.
 
-در دریافت چندبخشی، سری‌ها را با `message_id` ادغام و بدون تکرار، بر اساس `timestamp_ms` و سپس شناسه مرتب کنید. **آمار و OHLC هر پاسخ فقط برای نقاط همان پاسخ است**؛ پس از ادغام، دوباره از کل نقاط محاسبه کنید. در PHP می‌توانید از `summarizeSeries($mergedSeries)` استفاده کنید. آخرین بخش که `complete=true` دارد به معنی کامل بودن همان پیمایش تا حد پایین است؛ تمام بخش‌های قبلی نیز باید موفق دریافت شده باشند.
+When fetching multiple pages, merge the series by `message_id`, remove duplicates, and sort by `timestamp_ms` and then by message ID. **The statistics and OHLC values in each response only cover that response's points**; recalculate them after merging all pages. In PHP, use `summarizeSeries($mergedSeries)`. The final page with `complete=true` means that scan reached its lower bound; every earlier page must also have been fetched successfully.
 
-`complete=true` یعنی پیمایش تا شروع بازه یا انتهای **تاریخچهٔ عمومی قابل مشاهده** رسیده است، نه تضمین کامل بودن آرشیو تلگرام یا کل بازار. پیام‌های حذف‌شده/خصوصی یا تغییر قالب HTML قابل بازیابی نیستند. بدون آرشیو محلی، دسترسی تاریخی به چیزی محدود است که تلگرام در پیش‌نمایش عمومی نمایش می‌دهد.
+`complete=true` means the scan reached the start of the requested range or the end of the **publicly visible history**. It does not guarantee that the full Telegram archive or market history is available. Deleted or private messages and changes to Telegram's HTML format cannot be recovered. Without a local archive, historical access is limited to what Telegram exposes in the public preview.
 
-## توسعه و تست
+## Development and tests
 
-فایل را می‌توان `require` کرد؛ در این حالت درخواست شبکه خودکار اجرا نمی‌شود. `collectHistory($options, $fetchCallback)` دریافت‌کنندهٔ جایگزین می‌پذیرد تا صفحه‌بندی بدون شبکه تست شود.
+You can `require` this file without triggering a network request. `collectHistory($options, $fetchCallback)` accepts a custom fetch callback, which allows pagination to be tested without network access.
 
 ```sh
 php -l birs-price.php
 php tests/run.php
 ```
 
-تست‌ها مرز روز تهران، تاریخ نامعتبر، ارقام و اعشار فارسی، سازگاری خروجی قبلی، صفحه‌بندی، ادامه، حذف تکرار، توقف، خطای upstream، دادهٔ خالی، کمینه/بیشینه و OHLC را بررسی می‌کنند.
+The tests cover Tehran day boundaries, invalid dates, Persian numerals and decimals, backward-compatible output, pagination and continuation, duplicate removal, stopping conditions, upstream errors, empty data, extrema, and OHLC values.

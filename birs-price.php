@@ -332,6 +332,19 @@ function fetchChannel(?int $before = null, int $timeout = 15): string
 
 // Including this file only loads the functions, so callers and tests can reuse them.
 if (isset($_SERVER['SCRIPT_FILENAME']) && realpath($_SERVER['SCRIPT_FILENAME']) === __FILE__) {
+    // ---- CORS: open to every origin, any base URL, any request header ----
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, HEAD, OPTIONS');
+    header('Access-Control-Allow-Headers: *');
+    header('Access-Control-Expose-Headers: Content-Type, Content-Length');
+    header('Access-Control-Max-Age: 86400');
+
+    // Answer preflight requests immediately, before any API work.
+    if (strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
+        http_response_code(204);
+        exit;
+    }
+
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
     try {

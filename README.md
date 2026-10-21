@@ -4,7 +4,7 @@ A single-file PHP API that reads Tehran cash-market prices from the public previ
 
 ## Web dashboard
 
-The `web/` directory contains a single-page, English-language dashboard with a near-black theme and a locally hosted Manrope variable font. It is built with React, Vite, HeroUI, and Recharts, uses the supplied Birs logo, and is installable as a Progressive Web App (PWA). It shows buy and sell trends, the minimum and maximum prices with their dates, recent messages, and CSV export. The date filter uses **Gregorian dates in the Asia/Tehran time zone**. The dashboard fetches more history pages automatically and marks the report as partial if the API cannot finish the range.
+The `web/` directory contains a single-page, English-language dashboard with a near-black theme and a locally hosted Manrope variable font. It is built with React, Vite, HeroUI, and Recharts, uses the supplied Birs logo, and is installable as a Progressive Web App (PWA). It shows buy and sell trends, a chart with a full-screen toggle, the minimum and maximum prices with their dates, recent messages, and CSV export. The date filter uses **Gregorian dates in the Asia/Tehran time zone**. The dashboard fetches more history pages automatically and marks the report as partial if the API cannot finish the range.
 
 To run it locally, start the PHP API from the repository root in one terminal:
 

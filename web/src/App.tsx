@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Button, Card, Input } from '@heroui/react';
 import {
   Activity, ArrowDownLeft, ArrowUpRight, BarChart3, CalendarDays,
-  Check, ChevronRight, CircleAlert, Download, ExternalLink, RefreshCw,
+  Check, ChevronRight, CircleAlert, Download, ExternalLink, Maximize2, Minimize2, RefreshCw,
   TrendingDown, TrendingUp,
 } from 'lucide-react';
 import {
@@ -147,6 +147,48 @@ function App() {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [isChartFullscreen, setIsChartFullscreen] = useState(false);
+  const chartCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const syncFullscreen = () => setIsChartFullscreen(document.fullscreenElement === chartCardRef.current);
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
+  }, []);
+
+  useEffect(() => {
+    if (!isChartFullscreen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (document.fullscreenElement === chartCardRef.current) {
+        void document.exitFullscreen().catch(() => {});
+      }
+      setIsChartFullscreen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isChartFullscreen]);
+
+  async function toggleChartFullscreen() {
+    const chartCard = chartCardRef.current;
+    if (!chartCard) return;
+    if (document.fullscreenElement === chartCard) {
+      await document.exitFullscreen();
+    } else if (isChartFullscreen) {
+      setIsChartFullscreen(false);
+    } else {
+      try {
+        await chartCard.requestFullscreen();
+      } catch {
+        setIsChartFullscreen(true);
+      }
+    }
+  }
 
   useEffect(() => {
     const updateConnection = () => setIsOffline(!navigator.onLine);
@@ -280,7 +322,7 @@ function App() {
         </section>
 
         <div className="content-grid">
-          <Card className="chart-card">
+          <Card ref={chartCardRef} className={`chart-card ${isChartFullscreen ? 'is-fullscreen' : ''}`}>
             <Card.Content className="chart-content">
               <div className="card-heading chart-heading">
                 <div><span className="kicker">PRICE TREND</span><h2>Price history</h2><p>Published rates in the selected period</p></div>
@@ -290,6 +332,10 @@ function App() {
                       <button key={key} type="button" className={view === key ? 'active' : ''} onClick={() => setView(key)} aria-pressed={view === key}>{label}</button>
                     ))}
                   </div>
+                  <button type="button" className="fullscreen-button" onClick={toggleChartFullscreen} aria-label={isChartFullscreen ? 'Exit full-screen chart' : 'View chart full screen'} aria-pressed={isChartFullscreen}>
+                    {isChartFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                    <span>{isChartFullscreen ? 'Exit full screen' : 'Full screen'}</span>
+                  </button>
                 </div>
               </div>
               <div className="chart-legend"><span><i className="legend-dot buy" /> Buy</span><span><i className="legend-dot sell" /> Sell</span></div>

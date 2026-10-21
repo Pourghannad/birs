@@ -67,7 +67,7 @@ button:disabled { cursor: not-allowed; }
 .section-heading p, .card-heading p { margin: 3px 0 0; color: #91a0a9; font-size: 10px; }
 .quick-periods { gap: 5px; padding: 3px; background: #f4f7f7; border: 1px solid #edf1f1; border-radius: 10px; }
 .period-button { min-width: 80px; height: 31px; border-radius: 7px; font-size: 11px; font-weight: 700; }
-.filter-form { gap: 12px; }
+.filter-form { gap: 12px; align-items: flex-end; }
 .date-field { display: flex; flex: 1; align-items: center; gap: 13px; min-width: 0; }
 .date-field > span { color: #667c89; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .date-input { flex: 1; width: 100%; min-width: 0; height: 42px; color: #344e5c; background: #fafcfc; border: 1px solid #e3ebed; border-radius: 10px; padding: 8px 13px; direction: ltr; text-align: center; font-family: "Manrope", ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 700; box-shadow: none; }
@@ -257,7 +257,11 @@ td.empty-row { text-align: center; color: #9aabb4; padding: 30px; }
 .period-button.button--primary { color: #f5fbf9; background: #297f77; }
 .period-button.button--primary:hover { background: #33958b; }
 .date-field > span { color: #bfd0dc; }
+.filter-form .date-field { flex-direction: column; align-items: stretch; gap: 6px; }
+.filter-form .date-field > span { text-align: left; }
 .date-input { color: #e7edf2; background: #111318; border-color: #454a54; font-family: "Manrope", ui-sans-serif, system-ui, sans-serif; }
+.date-field .date-input { height: 42px; min-height: 42px; }
+.filter-form .apply-button { align-self: flex-end; height: 42px; }
 .date-input:hover { border-color: #77a7a2; }
 .date-input:focus { border-color: #72d7c4; outline-color: #255d59; }
 .apply-button { background: #297f77; color: #fff; }

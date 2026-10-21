@@ -16,15 +16,17 @@ In another terminal, start Vite:
 
 ```sh
 cd web
-npm ci
-npm run dev
+pnpm install --frozen-lockfile
+pnpm dev
 ```
 
 Open the URL printed by Vite. Its development proxy forwards `/birs-price.php` requests to the PHP server on port 8000.
 
-To deploy, run `npm run build` in `web/`, then place the contents of `web/dist/` in the same public web root as `birs-price.php`. The dashboard expects the PHP endpoint at `/birs-price.php`. If the endpoint lives elsewhere, set `VITE_API_URL` to its URL before building; a different origin must permit browser requests with CORS. The GitHub repository alone does not host the PHP endpoint.
+To deploy, run `pnpm build` in `web/`, then place the contents of `web/dist/` in the same public web root as `birs-price.php`. The dashboard expects the PHP endpoint at `/birs-price.php`. If the endpoint lives elsewhere, set `VITE_API_URL` to its URL before building; a different origin must permit browser requests with CORS. The GitHub repository alone does not host the PHP endpoint.
 
-The PWA requires HTTPS on a deployed host. Its app shell is available offline after the first visit. Price requests use a network-first cache: previously visited date ranges can be reopened offline for up to 24 hours, while connected requests prefer fresh API data. The UI labels offline mode; a new date range still needs a network connection. To regenerate the PWA icons after changing `web/public/logo.jpeg`, run `npm run generate:pwa-assets` in `web/` and rebuild.
+The PWA requires HTTPS on a deployed host. Its app shell is available offline after the first visit. Price requests use a network-first cache: previously visited date ranges can be reopened offline for up to 24 hours, while connected requests prefer fresh API data. The UI labels offline mode; a new date range still needs a network connection. To regenerate the PWA icons after changing `web/public/logo.jpeg`, run `pnpm generate:pwa-assets` in `web/` and rebuild.
+
+The web project uses pnpm 9.15.4 (declared in `web/package.json`) and Biome for formatting and linting. Run `pnpm check` before committing; `pnpm check:write` applies safe formatting and lint fixes. CI runs `pnpm run ci` followed by the production build.
 
 ## Installation
 

@@ -63,14 +63,16 @@ export function isValidDate(value: string): boolean {
 function isPricePoint(value: unknown): value is PricePoint {
   if (!value || typeof value !== 'object') return false;
   const point = value as Partial<PricePoint>;
-  return Number.isInteger(point.message_id) &&
+  return (
+    Number.isInteger(point.message_id) &&
     typeof point.message_url === 'string' &&
     typeof point.time === 'string' &&
     typeof point.date === 'string' &&
     Number.isFinite(point.timestamp_ms) &&
     Number.isFinite(point.buy) &&
     Number.isFinite(point.sell) &&
-    Number.isFinite(point.spread);
+    Number.isFinite(point.spread)
+  );
 }
 
 export async function fetchHistory(
@@ -99,7 +101,7 @@ export async function fetchHistory(
     const response = await fetch(url, { signal, headers: { Accept: 'application/json' } });
     let body: HistoryResponse;
     try {
-      body = await response.json() as HistoryResponse;
+      body = (await response.json()) as HistoryResponse;
     } catch {
       throw new Error('Invalid API response. Check the PHP endpoint.');
     }
@@ -114,9 +116,7 @@ export async function fetchHistory(
     }
     for (const warning of body.warnings || []) warnings.add(warning);
     pagesFetched += body.pagination.pages_fetched || 0;
-    const sorted = [...byId.values()].sort(
-      (a, b) => a.timestamp_ms - b.timestamp_ms || a.message_id - b.message_id,
-    );
+    const sorted = [...byId.values()].sort((a, b) => a.timestamp_ms - b.timestamp_ms || a.message_id - b.message_id);
     onProgress(sorted, pagesFetched);
 
     stopReason = body.pagination.stop_reason || null;
@@ -155,7 +155,9 @@ export function extrema(points: PricePoint[], side: 'buy' | 'sell') {
 export function downloadCsv(points: PricePoint[]) {
   const lines = [
     'date,time,buy,sell,spread,message_url',
-    ...points.map((point) => [point.date, point.time, point.buy, point.sell, point.spread, point.message_url].join(',')),
+    ...points.map((point) =>
+      [point.date, point.time, point.buy, point.sell, point.spread, point.message_url].join(','),
+    ),
   ];
   const blob = new Blob(['\uFEFF', lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
   const href = URL.createObjectURL(blob);

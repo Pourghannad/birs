@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
@@ -28,16 +28,18 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
-        runtimeCaching: [{
-          urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname === '/birs-price.php',
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'birs-price-history',
-            networkTimeoutSeconds: 8,
-            cacheableResponse: { statuses: [200] },
-            expiration: { maxEntries: 40, maxAgeSeconds: 24 * 60 * 60 },
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname === '/birs-price.php',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'birs-price-history',
+              networkTimeoutSeconds: 8,
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 40, maxAgeSeconds: 24 * 60 * 60 },
+            },
           },
-        }],
+        ],
       },
     }),
   ],

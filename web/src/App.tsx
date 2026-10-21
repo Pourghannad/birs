@@ -1,16 +1,32 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Button, Card, Input } from '@heroui/react';
 import {
-  Activity, ArrowDownLeft, ArrowUpRight, BarChart3, CalendarDays,
-  Check, ChevronRight, CircleAlert, Download, ExternalLink, Maximize2, Minimize2, RefreshCw,
-  TrendingDown, TrendingUp,
+  Activity,
+  ArrowDownLeft,
+  ArrowUpRight,
+  BarChart3,
+  CalendarDays,
+  Check,
+  ChevronRight,
+  CircleAlert,
+  Download,
+  ExternalLink,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react';
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
-  Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from 'recharts';
-import {
-  daysBefore, downloadCsv, extrema, fetchHistory, isValidDate, tehranToday,
-  type DateRange, type PricePoint,
+  type DateRange,
+  daysBefore,
+  downloadCsv,
+  extrema,
+  fetchHistory,
+  isValidDate,
+  type PricePoint,
+  tehranToday,
 } from './data';
 
 type ViewMode = 'both' | 'buy' | 'sell';
@@ -23,13 +39,22 @@ const initialRange: DateRange = {
 };
 const digits = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 const shortDate = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Asia/Tehran',
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'Asia/Tehran',
 });
 const chartDate = new Intl.DateTimeFormat('en-US', {
-  month: 'short', day: 'numeric', timeZone: 'Asia/Tehran',
+  month: 'short',
+  day: 'numeric',
+  timeZone: 'Asia/Tehran',
 });
 const fullDate = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
   timeZone: 'Asia/Tehran',
 });
 
@@ -50,7 +75,11 @@ function latestTime(value: string | undefined): string {
 }
 
 function PriceCard({
-  label, value, previous, tone, icon,
+  label,
+  value,
+  previous,
+  tone,
+  icon,
 }: {
   label: string;
   value?: number;
@@ -67,14 +96,17 @@ function PriceCard({
           <span className="metric-caption">{label}</span>
         </div>
         <div className="metric-value-row">
-          <strong className="metric-value" dir="ltr">{number(value)}</strong>
+          <strong className="metric-value" dir="ltr">
+            {number(value)}
+          </strong>
           <span className="metric-unit">as published</span>
         </div>
         <div className="metric-bottom">
           <span>Latest in range</span>
           {change != null && (
             <span className={`metric-change ${change > 0 ? 'change-up' : change < 0 ? 'change-down' : ''}`} dir="ltr">
-              {change > 0 ? '+' : ''}{number(change)}
+              {change > 0 ? '+' : ''}
+              {number(change)}
             </span>
           )}
         </div>
@@ -83,7 +115,12 @@ function PriceCard({
   );
 }
 
-function ExtremeCard({ title, tone, min, max }: {
+function ExtremeCard({
+  title,
+  tone,
+  min,
+  max,
+}: {
   title: string;
   tone: 'buy' | 'sell';
   min: PricePoint | null;
@@ -99,18 +136,30 @@ function ExtremeCard({ title, tone, min, max }: {
         </div>
         <div className="extreme-grid">
           <div className="extreme-item">
-            <div className="extreme-heading"><TrendingUp size={16} /> High</div>
+            <div className="extreme-heading">
+              <TrendingUp size={16} /> High
+            </div>
             <strong dir="ltr">{number(max?.[tone])}</strong>
-            {max ? <a href={max.message_url} target="_blank" rel="noreferrer" title="View source post">
-              {dateLabel(max.date)} <ExternalLink size={13} />
-            </a> : <span>—</span>}
+            {max ? (
+              <a href={max.message_url} target="_blank" rel="noreferrer" title="View source post">
+                {dateLabel(max.date)} <ExternalLink size={13} />
+              </a>
+            ) : (
+              <span>—</span>
+            )}
           </div>
           <div className="extreme-item">
-            <div className="extreme-heading"><TrendingDown size={16} /> Low</div>
+            <div className="extreme-heading">
+              <TrendingDown size={16} /> Low
+            </div>
             <strong dir="ltr">{number(min?.[tone])}</strong>
-            {min ? <a href={min.message_url} target="_blank" rel="noreferrer" title="View source post">
-              {dateLabel(min.date)} <ExternalLink size={13} />
-            </a> : <span>—</span>}
+            {min ? (
+              <a href={min.message_url} target="_blank" rel="noreferrer" title="View source post">
+                {dateLabel(min.date)} <ExternalLink size={13} />
+              </a>
+            ) : (
+              <span>—</span>
+            )}
           </div>
         </div>
       </Card.Content>
@@ -118,17 +167,18 @@ function ExtremeCard({ title, tone, min, max }: {
   );
 }
 
-function ChartTooltip({ active, payload }: {
-  active?: boolean;
-  payload?: Array<{ payload?: PricePoint }>;
-}) {
+function ChartTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload?: PricePoint }> }) {
   if (!active || !payload?.length || !payload[0].payload) return null;
   const point = payload[0].payload;
   return (
     <div className="chart-tooltip">
       <div className="tooltip-date">{latestTime(point.time)}</div>
-      <div className="tooltip-line"><span className="legend-dot buy" /> Buy <b>{number(point.buy)}</b></div>
-      <div className="tooltip-line"><span className="legend-dot sell" /> Sell <b>{number(point.sell)}</b></div>
+      <div className="tooltip-line">
+        <span className="legend-dot buy" /> Buy <b>{number(point.buy)}</b>
+      </div>
+      <div className="tooltip-line">
+        <span className="legend-dot sell" /> Sell <b>{number(point.sell)}</b>
+      </div>
     </div>
   );
 }
@@ -145,7 +195,6 @@ function App() {
   const [complete, setComplete] = useState(false);
   const [pagesFetched, setPagesFetched] = useState(0);
   const [warnings, setWarnings] = useState<string[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [isChartFullscreen, setIsChartFullscreen] = useState(false);
   const chartCardRef = useRef<HTMLDivElement>(null);
@@ -213,20 +262,22 @@ function App() {
         setPoints(progress);
         setPagesFetched(pages);
       }
-    }).then((result) => {
-      if (controller.signal.aborted) return;
-      setPoints(result.points);
-      setPagesFetched(result.pagesFetched);
-      setComplete(result.complete);
-      setWarnings(result.warnings);
-      setPhase('ready');
-    }).catch((cause: unknown) => {
-      if (controller.signal.aborted) return;
-      setError(cause instanceof Error ? cause.message : 'Could not load price data.');
-      setPhase('error');
-    });
+    })
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        setPoints(result.points);
+        setPagesFetched(result.pagesFetched);
+        setComplete(result.complete);
+        setWarnings(result.warnings);
+        setPhase('ready');
+      })
+      .catch((cause: unknown) => {
+        if (controller.signal.aborted) return;
+        setError(cause instanceof Error ? cause.message : 'Could not load price data.');
+        setPhase('error');
+      });
     return () => controller.abort();
-  }, [range, refreshKey]);
+  }, [range]);
 
   const latest = points.at(-1);
   const previous = points.at(-2);
@@ -257,7 +308,6 @@ function App() {
     setFilterError(null);
     setPeriod(null);
     setRange({ ...draft });
-    if (draft.from === range.from && draft.to === range.to) setRefreshKey((key) => key + 1);
   }
 
   return (
@@ -266,11 +316,18 @@ function App() {
       <header className="site-header">
         <div className="container header-inner">
           <div className="brand">
-            <div className="brand-mark"><img src="/logo.jpeg" alt="Birs logo" /></div>
-            <div><strong>Birs</strong><small>PRICE INTELLIGENCE</small></div>
+            <div className="brand-mark">
+              <img src="/logo.jpeg" alt="Birs logo" />
+            </div>
+            <div>
+              <strong>Birs</strong>
+              <small>PRICE INTELLIGENCE</small>
+            </div>
           </div>
           <div className="header-meta">
-            <span className="header-market"><span className="live-dot" /> Tehran cash market</span>
+            <span className="header-market">
+              <span className="live-dot" /> Tehran cash market
+            </span>
             <a href="https://t.me/birs_tomorrow" target="_blank" rel="noreferrer" className="header-source">
               Telegram source <ExternalLink size={15} />
             </a>
@@ -281,102 +338,373 @@ function App() {
       <main className="container main-content">
         <section className="page-intro">
           <div>
-            <div className="eyebrow"><span className="eyebrow-line" /> MARKET OVERVIEW / TEHRAN</div>
+            <div className="eyebrow">
+              <span className="eyebrow-line" /> MARKET OVERVIEW / TEHRAN
+            </div>
             <h1>Birs price dashboard</h1>
             <p>Track published buy and sell rates, with highs and lows for any date range.</p>
           </div>
-          <div className={`data-state ${isOffline ? 'is-offline' : phase === 'loading' ? 'is-loading' : phase === 'error' ? 'is-error' : complete ? 'is-ready' : 'is-partial'}`}>
-            {phase === 'loading' ? <RefreshCw size={17} className="spin" /> : phase === 'error' ? <CircleAlert size={17} /> : complete ? <Check size={17} /> : <CircleAlert size={17} />}
-            {isOffline ? 'Offline · saved ranges only' : phase === 'loading' ? 'Loading rates' : phase === 'error' ? 'Data unavailable' : complete ? 'History complete' : 'Partial history'}
+          <div
+            className={`data-state ${isOffline ? 'is-offline' : phase === 'loading' ? 'is-loading' : phase === 'error' ? 'is-error' : complete ? 'is-ready' : 'is-partial'}`}
+          >
+            {phase === 'loading' ? (
+              <RefreshCw size={17} className="spin" />
+            ) : phase === 'error' ? (
+              <CircleAlert size={17} />
+            ) : complete ? (
+              <Check size={17} />
+            ) : (
+              <CircleAlert size={17} />
+            )}
+            {isOffline
+              ? 'Offline · saved ranges only'
+              : phase === 'loading'
+                ? 'Loading rates'
+                : phase === 'error'
+                  ? 'Data unavailable'
+                  : complete
+                    ? 'History complete'
+                    : 'Partial history'}
           </div>
         </section>
 
         <Card className="filter-card">
           <Card.Content className="filter-content">
             <div className="filter-heading">
-              <div className="section-heading"><span className="section-icon"><CalendarDays size={19} /></span><div><h2>Report period</h2><p>Gregorian dates · Tehran time</p></div></div>
-              <div className="quick-periods" aria-label="Quick date ranges">
+              <div className="section-heading">
+                <span className="section-icon">
+                  <CalendarDays size={19} />
+                </span>
+                <div>
+                  <h2>Report period</h2>
+                  <p>Gregorian dates · Tehran time</p>
+                </div>
+              </div>
+              <fieldset className="quick-periods" aria-label="Quick date ranges">
                 {[7, 30, 90].map((days) => (
-                  <Button key={days} size="sm" variant={period === days ? 'primary' : 'tertiary'} isDisabled={phase === 'loading'} onPress={() => choosePeriod(days)} className="period-button">
+                  <Button
+                    key={days}
+                    size="sm"
+                    variant={period === days ? 'primary' : 'tertiary'}
+                    isDisabled={phase === 'loading'}
+                    onPress={() => choosePeriod(days)}
+                    className="period-button"
+                  >
                     Last {number(days)} days
                   </Button>
                 ))}
-              </div>
+              </fieldset>
             </div>
             <form className="filter-form" onSubmit={applyFilter}>
-              <label className="date-field"><span>From</span><Input aria-label="From date" type="date" value={draft.from} onChange={(event) => setDraft((old) => ({ ...old, from: event.target.value }))} className="date-input" /></label>
-              <label className="date-field"><span>To</span><Input aria-label="To date" type="date" value={draft.to} onChange={(event) => setDraft((old) => ({ ...old, to: event.target.value }))} className="date-input" /></label>
-              <Button type="submit" variant="primary" isDisabled={phase === 'loading'} className="apply-button">Apply dates <ChevronRight size={17} /></Button>
+              <label className="date-field" htmlFor="from-date">
+                <span>From</span>
+                <Input
+                  id="from-date"
+                  aria-label="From date"
+                  type="date"
+                  value={draft.from}
+                  onChange={(event) => setDraft((old) => ({ ...old, from: event.target.value }))}
+                  className="date-input"
+                />
+              </label>
+              <label className="date-field" htmlFor="to-date">
+                <span>To</span>
+                <Input
+                  id="to-date"
+                  aria-label="To date"
+                  type="date"
+                  value={draft.to}
+                  onChange={(event) => setDraft((old) => ({ ...old, to: event.target.value }))}
+                  className="date-input"
+                />
+              </label>
+              <Button type="submit" variant="primary" isDisabled={phase === 'loading'} className="apply-button">
+                Apply dates <ChevronRight size={17} />
+              </Button>
             </form>
-            {filterError && <p className="form-error" role="alert">{filterError}</p>}
+            {filterError && (
+              <p className="form-error" role="alert">
+                {filterError}
+              </p>
+            )}
           </Card.Content>
         </Card>
 
-        {error && <div className="message-box error-box" role="alert"><CircleAlert size={19} /><div><strong>Price data could not be loaded.</strong><span>{error}</span></div><Button size="sm" variant="secondary" onPress={() => setRefreshKey((key) => key + 1)}>Retry</Button></div>}
-        {isPartial && <div className="message-box warning-box" role="status"><CircleAlert size={19} /><div><strong>Some history is unavailable.</strong><span>The chart and statistics use {number(points.length)} available posts.{warnings.length ? ` ${warnings.join(' ')}` : ''}</span></div></div>}
+        {error && (
+          <div className="message-box error-box" role="alert">
+            <CircleAlert size={19} />
+            <div>
+              <strong>Price data could not be loaded.</strong>
+              <span>{error}</span>
+            </div>
+            <Button size="sm" variant="secondary" onPress={() => setRange((current) => ({ ...current }))}>
+              Retry
+            </Button>
+          </div>
+        )}
+        {isPartial && (
+          <div className="message-box warning-box" role="status">
+            <CircleAlert size={19} />
+            <div>
+              <strong>Some history is unavailable.</strong>
+              <span>
+                The chart and statistics use {number(points.length)} available posts.
+                {warnings.length ? ` ${warnings.join(' ')}` : ''}
+              </span>
+            </div>
+          </div>
+        )}
 
         <section className="metrics-grid" aria-label="Latest rates in range">
-          <PriceCard label="Buy rate" value={latest?.buy} previous={previous?.buy} tone="buy" icon={<ArrowDownLeft size={20} />} />
-          <PriceCard label="Sell rate" value={latest?.sell} previous={previous?.sell} tone="sell" icon={<ArrowUpRight size={20} />} />
-          <PriceCard label="Sell–buy spread" value={latest?.spread} previous={previous?.spread} tone="spread" icon={<Activity size={20} />} />
+          <PriceCard
+            label="Buy rate"
+            value={latest?.buy}
+            previous={previous?.buy}
+            tone="buy"
+            icon={<ArrowDownLeft size={20} />}
+          />
+          <PriceCard
+            label="Sell rate"
+            value={latest?.sell}
+            previous={previous?.sell}
+            tone="sell"
+            icon={<ArrowUpRight size={20} />}
+          />
+          <PriceCard
+            label="Sell–buy spread"
+            value={latest?.spread}
+            previous={previous?.spread}
+            tone="spread"
+            icon={<Activity size={20} />}
+          />
         </section>
 
         <div className="content-grid">
           <Card ref={chartCardRef} className={`chart-card ${isChartFullscreen ? 'is-fullscreen' : ''}`}>
             <Card.Content className="chart-content">
               <div className="card-heading chart-heading">
-                <div><span className="kicker">PRICE TREND</span><h2>Price history</h2><p>Published rates in the selected period</p></div>
+                <div>
+                  <span className="kicker">PRICE TREND</span>
+                  <h2>Price history</h2>
+                  <p>Published rates in the selected period</p>
+                </div>
                 <div className="chart-actions">
-                  <div className="view-switch" aria-label="Price series">
-                    {([['both', 'Both'], ['buy', 'Buy'], ['sell', 'Sell']] as const).map(([key, label]) => (
-                      <button key={key} type="button" className={view === key ? 'active' : ''} onClick={() => setView(key)} aria-pressed={view === key}>{label}</button>
+                  <fieldset className="view-switch" aria-label="Price series">
+                    {(
+                      [
+                        ['both', 'Both'],
+                        ['buy', 'Buy'],
+                        ['sell', 'Sell'],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={view === key ? 'active' : ''}
+                        onClick={() => setView(key)}
+                        aria-pressed={view === key}
+                      >
+                        {label}
+                      </button>
                     ))}
-                  </div>
-                  <button type="button" className="fullscreen-button" onClick={toggleChartFullscreen} aria-label={isChartFullscreen ? 'Exit full-screen chart' : 'View chart full screen'} aria-pressed={isChartFullscreen}>
+                  </fieldset>
+                  <button
+                    type="button"
+                    className="fullscreen-button"
+                    onClick={toggleChartFullscreen}
+                    aria-label={isChartFullscreen ? 'Exit full-screen chart' : 'View chart full screen'}
+                    aria-pressed={isChartFullscreen}
+                  >
                     {isChartFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
                     <span>{isChartFullscreen ? 'Exit full screen' : 'Full screen'}</span>
                   </button>
                 </div>
               </div>
-              <div className="chart-legend"><span><i className="legend-dot buy" /> Buy</span><span><i className="legend-dot sell" /> Sell</span></div>
+              <div className="chart-legend">
+                <span>
+                  <i className="legend-dot buy" /> Buy
+                </span>
+                <span>
+                  <i className="legend-dot sell" /> Sell
+                </span>
+              </div>
               <div className="chart-frame">
                 {points.length ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={points} margin={{ top: 16, right: 4, left: 0, bottom: 4 }}>
                       <defs>
-                        <linearGradient id="buyFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0d8f80" stopOpacity={0.18} /><stop offset="95%" stopColor="#0d8f80" stopOpacity={0} /></linearGradient>
-                        <linearGradient id="sellFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#c77b5a" stopOpacity={0.12} /><stop offset="95%" stopColor="#c77b5a" stopOpacity={0} /></linearGradient>
+                        <linearGradient id="buyFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#0d8f80" stopOpacity={0.18} />
+                          <stop offset="95%" stopColor="#0d8f80" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="sellFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#c77b5a" stopOpacity={0.12} />
+                          <stop offset="95%" stopColor="#c77b5a" stopOpacity={0} />
+                        </linearGradient>
                       </defs>
                       <CartesianGrid vertical={false} stroke="#30343c" strokeDasharray="4 5" />
-                      <XAxis dataKey="timestamp_ms" type="number" domain={['dataMin', 'dataMax']} scale="time" tickFormatter={(value: number) => chartDate.format(new Date(value))} tick={{ fill: '#8fa3b4', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={45} />
-                      <YAxis tickFormatter={(value: number) => number(value)} tick={{ fill: '#8fa3b4', fontSize: 11 }} axisLine={false} tickLine={false} width={48} orientation="right" domain={['auto', 'auto']} />
+                      <XAxis
+                        dataKey="timestamp_ms"
+                        type="number"
+                        domain={['dataMin', 'dataMax']}
+                        scale="time"
+                        tickFormatter={(value: number) => chartDate.format(new Date(value))}
+                        tick={{ fill: '#8fa3b4', fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                        minTickGap={45}
+                      />
+                      <YAxis
+                        tickFormatter={(value: number) => number(value)}
+                        tick={{ fill: '#8fa3b4', fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={48}
+                        orientation="right"
+                        domain={['auto', 'auto']}
+                      />
                       <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#9bb6b3', strokeDasharray: '4 4' }} />
-                      {(view === 'both' || view === 'buy') && <Area name="Buy" type="monotone" dataKey="buy" stroke="#42c8b0" strokeWidth={2.7} fill="url(#buyFill)" dot={false} activeDot={{ r: 5, fill: '#42c8b0', stroke: '#13283a', strokeWidth: 2 }} isAnimationActive={false} />}
-                      {(view === 'both' || view === 'sell') && <Area name="Sell" type="monotone" dataKey="sell" stroke="#e2a078" strokeWidth={2.5} fill="url(#sellFill)" dot={false} activeDot={{ r: 5, fill: '#e2a078', stroke: '#13283a', strokeWidth: 2 }} isAnimationActive={false} />}
+                      {(view === 'both' || view === 'buy') && (
+                        <Area
+                          name="Buy"
+                          type="monotone"
+                          dataKey="buy"
+                          stroke="#42c8b0"
+                          strokeWidth={2.7}
+                          fill="url(#buyFill)"
+                          dot={false}
+                          activeDot={{ r: 5, fill: '#42c8b0', stroke: '#13283a', strokeWidth: 2 }}
+                          isAnimationActive={false}
+                        />
+                      )}
+                      {(view === 'both' || view === 'sell') && (
+                        <Area
+                          name="Sell"
+                          type="monotone"
+                          dataKey="sell"
+                          stroke="#e2a078"
+                          strokeWidth={2.5}
+                          fill="url(#sellFill)"
+                          dot={false}
+                          activeDot={{ r: 5, fill: '#e2a078', stroke: '#13283a', strokeWidth: 2 }}
+                          isAnimationActive={false}
+                        />
+                      )}
                     </AreaChart>
                   </ResponsiveContainer>
-                ) : <div className="empty-chart"><BarChart3 size={32} /><strong>{phase === 'loading' ? 'Preparing chart…' : 'No rates found for this period'}</strong><span>{phase === 'loading' ? 'Reading the public channel history' : 'Choose another period or check the data source.'}</span></div>}
+                ) : (
+                  <div className="empty-chart">
+                    <BarChart3 size={32} />
+                    <strong>{phase === 'loading' ? 'Preparing chart…' : 'No rates found for this period'}</strong>
+                    <span>
+                      {phase === 'loading'
+                        ? 'Reading the public channel history'
+                        : 'Choose another period or check the data source.'}
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="chart-footer"><span>Each point represents one post with buy and sell rates.</span><span>{number(points.length)} records · {number(pagesFetched)} pages</span></div>
+              <div className="chart-footer">
+                <span>Each point represents one post with buy and sell rates.</span>
+                <span>
+                  {number(points.length)} records · {number(pagesFetched)} pages
+                </span>
+              </div>
             </Card.Content>
           </Card>
           <aside className="sidebar-stats">
-            <div className="side-heading"><span className="kicker">RANGE STATISTICS</span><h2>Highs & lows</h2></div>
+            <div className="side-heading">
+              <span className="kicker">RANGE STATISTICS</span>
+              <h2>Highs & lows</h2>
+            </div>
             <ExtremeCard title="Buy rate" tone="buy" min={buyExtreme.min} max={buyExtreme.max} />
             <ExtremeCard title="Sell rate" tone="sell" min={sellExtreme.min} max={sellExtreme.max} />
-            <div className="source-note"><Activity size={17} /><span>Dates use Tehran time. Rate values are shown exactly as published by the channel.</span></div>
+            <div className="source-note">
+              <Activity size={17} />
+              <span>Dates use Tehran time. Rate values are shown exactly as published by the channel.</span>
+            </div>
           </aside>
         </div>
 
         <Card className="history-card">
           <Card.Content className="history-content">
-            <div className="card-heading history-heading"><div><span className="kicker">MARKET DETAIL</span><h2>Latest published rates</h2><p>{latest ? `Last update: ${latestTime(latest.time)}` : 'No rates loaded yet'}</p></div><Button size="sm" variant="secondary" isDisabled={points.length === 0} onPress={() => downloadCsv(points)}><Download size={16} /> Export CSV</Button></div>
-            <div className="table-wrap"><table><thead><tr><th>Date & time</th><th>Buy</th><th>Sell</th><th>Spread</th><th>Source</th></tr></thead><tbody>{recentRows.length ? recentRows.map((point) => <tr key={point.message_id}><td>{latestTime(point.time)}</td><td className="table-buy">{number(point.buy)}</td><td className="table-sell">{number(point.sell)}</td><td>{number(point.spread)}</td><td><a href={point.message_url} target="_blank" rel="noreferrer" aria-label={`View post ${point.message_id}`}><ExternalLink size={16} /></a></td></tr>) : <tr><td colSpan={5} className="empty-row">No rates to display.</td></tr>}</tbody></table></div>
-            {points.length > recentRows.length && <p className="table-footnote">Showing the latest {number(recentRows.length)} posts. Export CSV for all {number(points.length)} records.</p>}
+            <div className="card-heading history-heading">
+              <div>
+                <span className="kicker">MARKET DETAIL</span>
+                <h2>Latest published rates</h2>
+                <p>{latest ? `Last update: ${latestTime(latest.time)}` : 'No rates loaded yet'}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                isDisabled={points.length === 0}
+                onPress={() => downloadCsv(points)}
+              >
+                <Download size={16} /> Export CSV
+              </Button>
+            </div>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date & time</th>
+                    <th>Buy</th>
+                    <th>Sell</th>
+                    <th>Spread</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentRows.length ? (
+                    recentRows.map((point) => (
+                      <tr key={point.message_id}>
+                        <td>{latestTime(point.time)}</td>
+                        <td className="table-buy">{number(point.buy)}</td>
+                        <td className="table-sell">{number(point.sell)}</td>
+                        <td>{number(point.spread)}</td>
+                        <td>
+                          <a
+                            href={point.message_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={`View post ${point.message_id}`}
+                          >
+                            <ExternalLink size={16} />
+                          </a>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="empty-row">
+                        No rates to display.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {points.length > recentRows.length && (
+              <p className="table-footnote">
+                Showing the latest {number(recentRows.length)} posts. Export CSV for all {number(points.length)}{' '}
+                records.
+              </p>
+            )}
           </Card.Content>
         </Card>
       </main>
-      <footer className="site-footer"><div className="container footer-inner"><span>Birs · Tehran cash market dashboard</span><span>Data from the public preview of <a href="https://t.me/birs_tomorrow" target="_blank" rel="noreferrer">@birs_tomorrow</a>.</span></div></footer>
+      <footer className="site-footer">
+        <div className="container footer-inner">
+          <span>Birs · Tehran cash market dashboard</span>
+          <span>
+            Data from the public preview of{' '}
+            <a href="https://t.me/birs_tomorrow" target="_blank" rel="noreferrer">
+              @birs_tomorrow
+            </a>
+            .
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

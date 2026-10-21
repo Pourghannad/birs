@@ -101,13 +101,13 @@ export async function fetchHistory(
     try {
       body = await response.json() as HistoryResponse;
     } catch {
-      throw new Error('پاسخ API معتبر نیست. آدرس و اجرای فایل PHP را بررسی کنید.');
+      throw new Error('Invalid API response. Check the PHP endpoint.');
     }
     if (!response.ok || !body.ok) {
-      throw new Error(body.error || `دریافت داده با خطای ${response.status} روبه‌رو شد.`);
+      throw new Error(body.error || `The API returned HTTP ${response.status}.`);
     }
     if (!Array.isArray(body.series) || !body.pagination) {
-      throw new Error('ساختار دادهٔ API کامل نیست.');
+      throw new Error('The API response is missing required history fields.');
     }
     for (const point of body.series) {
       if (isPricePoint(point)) byId.set(point.message_id, point);

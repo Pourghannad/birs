@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { Button, Card, Input } from '@heroui/react';
 import {
   Activity, ArrowDownLeft, ArrowUpRight, BarChart3, CalendarDays,
-  Check, ChevronLeft, CircleAlert, Download, ExternalLink, RefreshCw,
+  Check, ChevronRight, CircleAlert, Download, ExternalLink, RefreshCw,
   TrendingDown, TrendingUp,
 } from 'lucide-react';
 import {
@@ -21,14 +21,14 @@ const initialRange: DateRange = {
   from: daysBefore(initialTo, 29),
   to: initialTo,
 };
-const digits = new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 2 });
-const shortDate = new Intl.DateTimeFormat('fa-IR-u-ca-gregory', {
+const digits = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const shortDate = new Intl.DateTimeFormat('en-US', {
   year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Asia/Tehran',
 });
-const chartDate = new Intl.DateTimeFormat('fa-IR-u-ca-gregory', {
+const chartDate = new Intl.DateTimeFormat('en-US', {
   month: 'short', day: 'numeric', timeZone: 'Asia/Tehran',
 });
-const fullDate = new Intl.DateTimeFormat('fa-IR-u-ca-gregory', {
+const fullDate = new Intl.DateTimeFormat('en-US', {
   year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
   timeZone: 'Asia/Tehran',
 });
@@ -44,7 +44,7 @@ function dateLabel(value: string | null | undefined): string {
 }
 
 function latestTime(value: string | undefined): string {
-  if (!value) return 'هنوز داده‌ای ثبت نشده است';
+  if (!value) return 'No rates recorded yet';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : fullDate.format(date);
 }
@@ -68,10 +68,10 @@ function PriceCard({
         </div>
         <div className="metric-value-row">
           <strong className="metric-value" dir="ltr">{number(value)}</strong>
-          <span className="metric-unit">طبق کانال</span>
+          <span className="metric-unit">as published</span>
         </div>
         <div className="metric-bottom">
-          <span>آخرین نرخ در بازه</span>
+          <span>Latest in range</span>
           {change != null && (
             <span className={`metric-change ${change > 0 ? 'change-up' : change < 0 ? 'change-down' : ''}`} dir="ltr">
               {change > 0 ? '+' : ''}{number(change)}
@@ -95,20 +95,20 @@ function ExtremeCard({ title, tone, min, max }: {
         <div className="extreme-title-row">
           <span className={`extreme-dot ${tone}`} />
           <h3>{title}</h3>
-          <span className="subtle-label">در بازهٔ انتخابی</span>
+          <span className="subtle-label">Selected range</span>
         </div>
         <div className="extreme-grid">
           <div className="extreme-item">
-            <div className="extreme-heading"><TrendingUp size={16} /> بیشترین</div>
+            <div className="extreme-heading"><TrendingUp size={16} /> High</div>
             <strong dir="ltr">{number(max?.[tone])}</strong>
-            {max ? <a href={max.message_url} target="_blank" rel="noreferrer" title="نمایش پیام منبع">
+            {max ? <a href={max.message_url} target="_blank" rel="noreferrer" title="View source post">
               {dateLabel(max.date)} <ExternalLink size={13} />
             </a> : <span>—</span>}
           </div>
           <div className="extreme-item">
-            <div className="extreme-heading"><TrendingDown size={16} /> کمترین</div>
+            <div className="extreme-heading"><TrendingDown size={16} /> Low</div>
             <strong dir="ltr">{number(min?.[tone])}</strong>
-            {min ? <a href={min.message_url} target="_blank" rel="noreferrer" title="نمایش پیام منبع">
+            {min ? <a href={min.message_url} target="_blank" rel="noreferrer" title="View source post">
               {dateLabel(min.date)} <ExternalLink size={13} />
             </a> : <span>—</span>}
           </div>
@@ -125,10 +125,10 @@ function ChartTooltip({ active, payload }: {
   if (!active || !payload?.length || !payload[0].payload) return null;
   const point = payload[0].payload;
   return (
-    <div className="chart-tooltip" dir="rtl">
+    <div className="chart-tooltip">
       <div className="tooltip-date">{latestTime(point.time)}</div>
-      <div className="tooltip-line"><span className="legend-dot buy" /> خرید <b dir="ltr">{number(point.buy)}</b></div>
-      <div className="tooltip-line"><span className="legend-dot sell" /> فروش <b dir="ltr">{number(point.sell)}</b></div>
+      <div className="tooltip-line"><span className="legend-dot buy" /> Buy <b>{number(point.buy)}</b></div>
+      <div className="tooltip-line"><span className="legend-dot sell" /> Sell <b>{number(point.sell)}</b></div>
     </div>
   );
 }
@@ -146,6 +146,17 @@ function App() {
   const [pagesFetched, setPagesFetched] = useState(0);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const updateConnection = () => setIsOffline(!navigator.onLine);
+    window.addEventListener('online', updateConnection);
+    window.addEventListener('offline', updateConnection);
+    return () => {
+      window.removeEventListener('online', updateConnection);
+      window.removeEventListener('offline', updateConnection);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -169,7 +180,7 @@ function App() {
       setPhase('ready');
     }).catch((cause: unknown) => {
       if (controller.signal.aborted) return;
-      setError(cause instanceof Error ? cause.message : 'دریافت داده با خطا روبه‌رو شد.');
+      setError(cause instanceof Error ? cause.message : 'Could not load price data.');
       setPhase('error');
     });
     return () => controller.abort();
@@ -194,11 +205,11 @@ function App() {
   function applyFilter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isValidDate(draft.from) || !isValidDate(draft.to)) {
-      setFilterError('هر دو تاریخ باید میلادی و معتبر باشند.');
+      setFilterError('Enter valid Gregorian dates for both fields.');
       return;
     }
     if (draft.from > draft.to) {
-      setFilterError('تاریخ شروع باید پیش از تاریخ پایان باشد.');
+      setFilterError('The start date must be on or before the end date.');
       return;
     }
     setFilterError(null);
@@ -208,18 +219,18 @@ function App() {
   }
 
   return (
-    <div className="app-shell" dir="rtl">
+    <div className="app-shell">
       <div className="topline" />
       <header className="site-header">
         <div className="container header-inner">
           <div className="brand">
-            <div className="brand-mark"><BarChart3 size={23} strokeWidth={2.4} /></div>
-            <div><strong>بیرس</strong><small>سامانه پایش قیمت</small></div>
+            <div className="brand-mark"><img src="/logo.jpeg" alt="Birs logo" /></div>
+            <div><strong>Birs</strong><small>PRICE INTELLIGENCE</small></div>
           </div>
           <div className="header-meta">
-            <span className="header-market"><span className="live-dot" /> بازار نقدی تهران</span>
+            <span className="header-market"><span className="live-dot" /> Tehran cash market</span>
             <a href="https://t.me/birs_tomorrow" target="_blank" rel="noreferrer" className="header-source">
-              منبع داده <ExternalLink size={15} />
+              Telegram source <ExternalLink size={15} />
             </a>
           </div>
         </div>
@@ -228,60 +239,60 @@ function App() {
       <main className="container main-content">
         <section className="page-intro">
           <div>
-            <div className="eyebrow"><span className="eyebrow-line" /> گزارش بازار / بیرس نقدی تهران</div>
-            <h1>گزارش قیمت بیرس</h1>
-            <p>روند نرخ خرید و فروش، همراه با بیشترین و کمترین قیمت ثبت‌شده در بازهٔ دلخواه شما.</p>
+            <div className="eyebrow"><span className="eyebrow-line" /> MARKET OVERVIEW / TEHRAN</div>
+            <h1>Birs price dashboard</h1>
+            <p>Track published buy and sell rates, with highs and lows for any date range.</p>
           </div>
-          <div className={`data-state ${phase === 'loading' ? 'is-loading' : phase === 'error' ? 'is-error' : complete ? 'is-ready' : 'is-partial'}`}>
+          <div className={`data-state ${isOffline ? 'is-offline' : phase === 'loading' ? 'is-loading' : phase === 'error' ? 'is-error' : complete ? 'is-ready' : 'is-partial'}`}>
             {phase === 'loading' ? <RefreshCw size={17} className="spin" /> : phase === 'error' ? <CircleAlert size={17} /> : complete ? <Check size={17} /> : <CircleAlert size={17} />}
-            {phase === 'loading' ? 'در حال دریافت داده' : phase === 'error' ? 'خطا در دریافت' : complete ? 'دادهٔ قابل مشاهده کامل' : 'دادهٔ ناقص'}
+            {isOffline ? 'Offline · saved ranges only' : phase === 'loading' ? 'Loading rates' : phase === 'error' ? 'Data unavailable' : complete ? 'History complete' : 'Partial history'}
           </div>
         </section>
 
         <Card className="filter-card">
           <Card.Content className="filter-content">
             <div className="filter-heading">
-              <div className="section-heading"><span className="section-icon"><CalendarDays size={19} /></span><div><h2>بازهٔ گزارش</h2><p>تاریخ میلادی، به وقت تهران</p></div></div>
-              <div className="quick-periods" aria-label="بازه‌های آماده">
+              <div className="section-heading"><span className="section-icon"><CalendarDays size={19} /></span><div><h2>Report period</h2><p>Gregorian dates · Tehran time</p></div></div>
+              <div className="quick-periods" aria-label="Quick date ranges">
                 {[7, 30, 90].map((days) => (
                   <Button key={days} size="sm" variant={period === days ? 'primary' : 'tertiary'} isDisabled={phase === 'loading'} onPress={() => choosePeriod(days)} className="period-button">
-                    {number(days)} روز اخیر
+                    Last {number(days)} days
                   </Button>
                 ))}
               </div>
             </div>
             <form className="filter-form" onSubmit={applyFilter}>
-              <label className="date-field"><span>از تاریخ</span><Input aria-label="از تاریخ" type="date" value={draft.from} onChange={(event) => setDraft((old) => ({ ...old, from: event.target.value }))} className="date-input" /></label>
-              <label className="date-field"><span>تا تاریخ</span><Input aria-label="تا تاریخ" type="date" value={draft.to} onChange={(event) => setDraft((old) => ({ ...old, to: event.target.value }))} className="date-input" /></label>
-              <Button type="submit" variant="primary" isDisabled={phase === 'loading'} className="apply-button">نمایش گزارش <ChevronLeft size={17} /></Button>
+              <label className="date-field"><span>From</span><Input aria-label="From date" type="date" value={draft.from} onChange={(event) => setDraft((old) => ({ ...old, from: event.target.value }))} className="date-input" /></label>
+              <label className="date-field"><span>To</span><Input aria-label="To date" type="date" value={draft.to} onChange={(event) => setDraft((old) => ({ ...old, to: event.target.value }))} className="date-input" /></label>
+              <Button type="submit" variant="primary" isDisabled={phase === 'loading'} className="apply-button">Apply dates <ChevronRight size={17} /></Button>
             </form>
             {filterError && <p className="form-error" role="alert">{filterError}</p>}
           </Card.Content>
         </Card>
 
-        {error && <div className="message-box error-box" role="alert"><CircleAlert size={19} /><div><strong>دریافت اطلاعات ممکن نشد.</strong><span>{error}</span></div><Button size="sm" variant="secondary" onPress={() => setRefreshKey((key) => key + 1)}>تلاش دوباره</Button></div>}
-        {isPartial && <div className="message-box warning-box" role="status"><CircleAlert size={19} /><div><strong>بخشی از تاریخچه در دسترس نبود.</strong><span>آمار و نمودار فقط بر اساس {number(points.length)} پیام دریافت‌شده نمایش داده می‌شود.{warnings.length ? ` ${warnings.join(' ')}` : ''}</span></div></div>}
+        {error && <div className="message-box error-box" role="alert"><CircleAlert size={19} /><div><strong>Price data could not be loaded.</strong><span>{error}</span></div><Button size="sm" variant="secondary" onPress={() => setRefreshKey((key) => key + 1)}>Retry</Button></div>}
+        {isPartial && <div className="message-box warning-box" role="status"><CircleAlert size={19} /><div><strong>Some history is unavailable.</strong><span>The chart and statistics use {number(points.length)} available posts.{warnings.length ? ` ${warnings.join(' ')}` : ''}</span></div></div>}
 
-        <section className="metrics-grid" aria-label="آخرین نرخ‌ها در بازه">
-          <PriceCard label="نرخ خرید" value={latest?.buy} previous={previous?.buy} tone="buy" icon={<ArrowDownLeft size={20} />} />
-          <PriceCard label="نرخ فروش" value={latest?.sell} previous={previous?.sell} tone="sell" icon={<ArrowUpRight size={20} />} />
-          <PriceCard label="اختلاف فروش و خرید" value={latest?.spread} previous={previous?.spread} tone="spread" icon={<Activity size={20} />} />
+        <section className="metrics-grid" aria-label="Latest rates in range">
+          <PriceCard label="Buy rate" value={latest?.buy} previous={previous?.buy} tone="buy" icon={<ArrowDownLeft size={20} />} />
+          <PriceCard label="Sell rate" value={latest?.sell} previous={previous?.sell} tone="sell" icon={<ArrowUpRight size={20} />} />
+          <PriceCard label="Sell–buy spread" value={latest?.spread} previous={previous?.spread} tone="spread" icon={<Activity size={20} />} />
         </section>
 
         <div className="content-grid">
           <Card className="chart-card">
             <Card.Content className="chart-content">
               <div className="card-heading chart-heading">
-                <div><span className="kicker">تحلیل روند</span><h2>نمودار تغییرات قیمت</h2><p>نرخ‌های منتشرشده در بازهٔ انتخابی</p></div>
+                <div><span className="kicker">PRICE TREND</span><h2>Price history</h2><p>Published rates in the selected period</p></div>
                 <div className="chart-actions">
-                  <div className="view-switch" aria-label="نمایش سری قیمت">
-                    {([['both', 'هر دو'], ['buy', 'خرید'], ['sell', 'فروش']] as const).map(([key, label]) => (
+                  <div className="view-switch" aria-label="Price series">
+                    {([['both', 'Both'], ['buy', 'Buy'], ['sell', 'Sell']] as const).map(([key, label]) => (
                       <button key={key} type="button" className={view === key ? 'active' : ''} onClick={() => setView(key)} aria-pressed={view === key}>{label}</button>
                     ))}
                   </div>
                 </div>
               </div>
-              <div className="chart-legend"><span><i className="legend-dot buy" /> خرید</span><span><i className="legend-dot sell" /> فروش</span></div>
+              <div className="chart-legend"><span><i className="legend-dot buy" /> Buy</span><span><i className="legend-dot sell" /> Sell</span></div>
               <div className="chart-frame">
                 {points.length ? (
                   <ResponsiveContainer width="100%" height="100%">
@@ -290,36 +301,36 @@ function App() {
                         <linearGradient id="buyFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0d8f80" stopOpacity={0.18} /><stop offset="95%" stopColor="#0d8f80" stopOpacity={0} /></linearGradient>
                         <linearGradient id="sellFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#c77b5a" stopOpacity={0.12} /><stop offset="95%" stopColor="#c77b5a" stopOpacity={0} /></linearGradient>
                       </defs>
-                      <CartesianGrid vertical={false} stroke="#e9eef0" strokeDasharray="4 5" />
-                      <XAxis dataKey="timestamp_ms" type="number" domain={['dataMin', 'dataMax']} scale="time" tickFormatter={(value: number) => chartDate.format(new Date(value))} tick={{ fill: '#8b9ba4', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={45} />
-                      <YAxis tickFormatter={(value: number) => number(value)} tick={{ fill: '#8b9ba4', fontSize: 11 }} axisLine={false} tickLine={false} width={48} orientation="right" domain={['auto', 'auto']} />
+                      <CartesianGrid vertical={false} stroke="#2c4052" strokeDasharray="4 5" />
+                      <XAxis dataKey="timestamp_ms" type="number" domain={['dataMin', 'dataMax']} scale="time" tickFormatter={(value: number) => chartDate.format(new Date(value))} tick={{ fill: '#8fa3b4', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={45} />
+                      <YAxis tickFormatter={(value: number) => number(value)} tick={{ fill: '#8fa3b4', fontSize: 11 }} axisLine={false} tickLine={false} width={48} orientation="right" domain={['auto', 'auto']} />
                       <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#9bb6b3', strokeDasharray: '4 4' }} />
-                      {(view === 'both' || view === 'buy') && <Area name="خرید" type="monotone" dataKey="buy" stroke="#0d8f80" strokeWidth={2.7} fill="url(#buyFill)" dot={false} activeDot={{ r: 5, fill: '#0d8f80', stroke: '#fff', strokeWidth: 2 }} isAnimationActive={false} />}
-                      {(view === 'both' || view === 'sell') && <Area name="فروش" type="monotone" dataKey="sell" stroke="#c77b5a" strokeWidth={2.5} fill="url(#sellFill)" dot={false} activeDot={{ r: 5, fill: '#c77b5a', stroke: '#fff', strokeWidth: 2 }} isAnimationActive={false} />}
+                      {(view === 'both' || view === 'buy') && <Area name="Buy" type="monotone" dataKey="buy" stroke="#42c8b0" strokeWidth={2.7} fill="url(#buyFill)" dot={false} activeDot={{ r: 5, fill: '#42c8b0', stroke: '#13283a', strokeWidth: 2 }} isAnimationActive={false} />}
+                      {(view === 'both' || view === 'sell') && <Area name="Sell" type="monotone" dataKey="sell" stroke="#e2a078" strokeWidth={2.5} fill="url(#sellFill)" dot={false} activeDot={{ r: 5, fill: '#e2a078', stroke: '#13283a', strokeWidth: 2 }} isAnimationActive={false} />}
                     </AreaChart>
                   </ResponsiveContainer>
-                ) : <div className="empty-chart"><BarChart3 size={32} /><strong>{phase === 'loading' ? 'در حال آماده‌سازی نمودار…' : 'داده‌ای برای این بازه پیدا نشد'}</strong><span>{phase === 'loading' ? 'در حال خواندن تاریخچهٔ عمومی کانال' : 'بازهٔ دیگری انتخاب کنید یا منبع داده را بررسی کنید.'}</span></div>}
+                ) : <div className="empty-chart"><BarChart3 size={32} /><strong>{phase === 'loading' ? 'Preparing chart…' : 'No rates found for this period'}</strong><span>{phase === 'loading' ? 'Reading the public channel history' : 'Choose another period or check the data source.'}</span></div>}
               </div>
-              <div className="chart-footer"><span>هر نقطه نشان‌دهندهٔ یک پیام دارای نرخ خرید و فروش است.</span><span>{number(points.length)} رکورد · {number(pagesFetched)} صفحه</span></div>
+              <div className="chart-footer"><span>Each point represents one post with buy and sell rates.</span><span>{number(points.length)} records · {number(pagesFetched)} pages</span></div>
             </Card.Content>
           </Card>
           <aside className="sidebar-stats">
-            <div className="side-heading"><span className="kicker">آمار بازه</span><h2>بیشینه و کمینه</h2></div>
-            <ExtremeCard title="قیمت خرید" tone="buy" min={buyExtreme.min} max={buyExtreme.max} />
-            <ExtremeCard title="قیمت فروش" tone="sell" min={sellExtreme.min} max={sellExtreme.max} />
-            <div className="source-note"><Activity size={17} /><span>تاریخ‌ها به وقت تهران است. واحد قیمت مطابق عدد منتشرشده در کانال نمایش داده می‌شود.</span></div>
+            <div className="side-heading"><span className="kicker">RANGE STATISTICS</span><h2>Highs & lows</h2></div>
+            <ExtremeCard title="Buy rate" tone="buy" min={buyExtreme.min} max={buyExtreme.max} />
+            <ExtremeCard title="Sell rate" tone="sell" min={sellExtreme.min} max={sellExtreme.max} />
+            <div className="source-note"><Activity size={17} /><span>Dates use Tehran time. Rate values are shown exactly as published by the channel.</span></div>
           </aside>
         </div>
 
         <Card className="history-card">
           <Card.Content className="history-content">
-            <div className="card-heading history-heading"><div><span className="kicker">جزئیات بازار</span><h2>آخرین نرخ‌های ثبت‌شده</h2><p>{latest ? `آخرین به‌روزرسانی: ${latestTime(latest.time)}` : 'هنوز داده‌ای دریافت نشده است'}</p></div><Button size="sm" variant="secondary" isDisabled={points.length === 0} onPress={() => downloadCsv(points)}><Download size={16} /> دریافت CSV</Button></div>
-            <div className="table-wrap"><table><thead><tr><th>تاریخ و زمان</th><th>خرید</th><th>فروش</th><th>اختلاف</th><th>منبع</th></tr></thead><tbody>{recentRows.length ? recentRows.map((point) => <tr key={point.message_id}><td>{latestTime(point.time)}</td><td className="table-buy" dir="ltr">{number(point.buy)}</td><td className="table-sell" dir="ltr">{number(point.sell)}</td><td dir="ltr">{number(point.spread)}</td><td><a href={point.message_url} target="_blank" rel="noreferrer" aria-label={`نمایش پیام ${point.message_id}`}><ExternalLink size={16} /></a></td></tr>) : <tr><td colSpan={5} className="empty-row">داده‌ای برای نمایش وجود ندارد.</td></tr>}</tbody></table></div>
-            {points.length > recentRows.length && <p className="table-footnote">جدول، {number(recentRows.length)} پیام آخر را نشان می‌دهد. همهٔ {number(points.length)} رکورد در فایل CSV قابل دریافت است.</p>}
+            <div className="card-heading history-heading"><div><span className="kicker">MARKET DETAIL</span><h2>Latest published rates</h2><p>{latest ? `Last update: ${latestTime(latest.time)}` : 'No rates loaded yet'}</p></div><Button size="sm" variant="secondary" isDisabled={points.length === 0} onPress={() => downloadCsv(points)}><Download size={16} /> Export CSV</Button></div>
+            <div className="table-wrap"><table><thead><tr><th>Date & time</th><th>Buy</th><th>Sell</th><th>Spread</th><th>Source</th></tr></thead><tbody>{recentRows.length ? recentRows.map((point) => <tr key={point.message_id}><td>{latestTime(point.time)}</td><td className="table-buy">{number(point.buy)}</td><td className="table-sell">{number(point.sell)}</td><td>{number(point.spread)}</td><td><a href={point.message_url} target="_blank" rel="noreferrer" aria-label={`View post ${point.message_id}`}><ExternalLink size={16} /></a></td></tr>) : <tr><td colSpan={5} className="empty-row">No rates to display.</td></tr>}</tbody></table></div>
+            {points.length > recentRows.length && <p className="table-footnote">Showing the latest {number(recentRows.length)} posts. Export CSV for all {number(points.length)} records.</p>}
           </Card.Content>
         </Card>
       </main>
-      <footer className="site-footer"><div className="container footer-inner"><span>بیرس · داشبورد پایش بازار نقدی تهران</span><span>داده‌ها از پیش‌نمایش عمومی <a href="https://t.me/birs_tomorrow" target="_blank" rel="noreferrer">کانال بیرس فردایی</a> خوانده می‌شوند.</span></div></footer>
+      <footer className="site-footer"><div className="container footer-inner"><span>Birs · Tehran cash market dashboard</span><span>Data from the public preview of <a href="https://t.me/birs_tomorrow" target="_blank" rel="noreferrer">@birs_tomorrow</a>.</span></div></footer>
     </div>
   );
 }

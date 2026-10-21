@@ -4,7 +4,7 @@ A single-file PHP API that reads Tehran cash-market prices from the public previ
 
 ## Web dashboard
 
-The `web/` directory contains a single-page Persian dashboard built with React, Vite, HeroUI, and Recharts. It shows buy and sell trends, the minimum and maximum prices with their dates, recent messages, and CSV export. The date filter uses **Gregorian dates in the Asia/Tehran time zone**. The dashboard fetches more history pages automatically and marks the report as partial if the API cannot finish the range.
+The `web/` directory contains a single-page, English-language dark dashboard built with React, Vite, HeroUI, and Recharts. It uses the supplied Birs logo and is installable as a Progressive Web App (PWA). It shows buy and sell trends, the minimum and maximum prices with their dates, recent messages, and CSV export. The date filter uses **Gregorian dates in the Asia/Tehran time zone**. The dashboard fetches more history pages automatically and marks the report as partial if the API cannot finish the range.
 
 To run it locally, start the PHP API from the repository root in one terminal:
 
@@ -23,6 +23,8 @@ npm run dev
 Open the URL printed by Vite. Its development proxy forwards `/birs-price.php` requests to the PHP server on port 8000.
 
 To deploy, run `npm run build` in `web/`, then place the contents of `web/dist/` in the same public web root as `birs-price.php`. The dashboard expects the PHP endpoint at `/birs-price.php`. If the endpoint lives elsewhere, set `VITE_API_URL` to its URL before building; a different origin must permit browser requests with CORS. The GitHub repository alone does not host the PHP endpoint.
+
+The PWA requires HTTPS on a deployed host. Its app shell is available offline after the first visit. Price requests use a network-first cache: previously visited date ranges can be reopened offline for up to 24 hours, while connected requests prefer fresh API data. The UI labels offline mode; a new date range still needs a network connection. To regenerate the PWA icons after changing `web/public/logo.jpeg`, run `npm run generate:pwa-assets` in `web/` and rebuild.
 
 ## Installation
 
